@@ -19,6 +19,12 @@ const DIFFICULTY_CONFIG = {
   easy:   { color: '#00ff88', label: 'CONTAINED',     bg: 'rgba(0,255,136,0.08)',   border: 'rgba(0,255,136,0.55)' },
 };
 
+// Largest size at which the city name still fits on one line inside the card
+// (card is at most 28rem wide; each Orbitron capital is roughly 0.85em).
+function cityNameFontSize(name) {
+  return `min(3.75rem, calc((min(100vw - 2rem, 28rem) - 4.5rem) / ${(name.length * 0.85).toFixed(2)}))`;
+}
+
 export default function SplashScreen({
   transitionStage = 'idle',
   onStartTransition,
@@ -143,7 +149,7 @@ export default function SplashScreen({
           {/* Nickname Input Form */}
           <form onSubmit={handleStart} className="w-full flex flex-col items-center space-y-4">
             <div className="w-full relative">
-              <label className="block font-mono text-[11px] text-cyan-400/70 tracking-[0.15em] uppercase mb-2 text-center">
+              <label htmlFor="callsign-input" className="block font-mono text-[11px] text-cyan-400 tracking-[0.15em] uppercase mb-2 text-center hud-legible">
                 ENTER OPERATOR CALLSIGN
               </label>
               <div className="relative corner-brackets">
@@ -175,6 +181,7 @@ export default function SplashScreen({
               type="submit"
               disabled={isTransitioning}
               className="tactical-btn w-full py-4 sm:py-5 text-lg sm:text-xl font-black tracking-widest flex items-center justify-center space-x-3 group cursor-pointer"
+              style={{ backgroundColor: 'rgba(3, 10, 20, 0.62)', backdropFilter: 'blur(6px)' }}
             >
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
@@ -189,7 +196,7 @@ export default function SplashScreen({
             </button>
           </form>
 
-          <p className="font-mono text-[11px] text-slate-500 tracking-wider text-center">
+          <p className="font-mono text-[11px] text-slate-300 tracking-wider text-center hud-legible">
             TACTICAL GRID READY • BROWSER DISPATCH TERMINAL V4.8 • 3-ROUND PROTOCOL
           </p>
 
@@ -209,7 +216,7 @@ export default function SplashScreen({
         </motion.div>
 
         {/* Footer coordinates */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-600 border-t border-slate-800/60 pt-3">
+        <div className="relative z-10 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-300 border-t border-slate-500/40 pt-3 hud-legible">
           <div className="flex space-x-4">
             <span>LAT: 20.59° N</span>
             <span>LON: 78.96° E</span>
@@ -231,8 +238,8 @@ export default function SplashScreen({
           >
             {/* Target Lock Card */}
             <div className="relative z-10 w-full max-w-md">
-              <div className="mb-4 font-mono text-[10px] text-cyan-400/80 tracking-widest text-center">
-                <span className="animate-pulse">[ TARGET LOCK CONFIRMED // SECTOR 81 ]</span>
+              <div className="mb-4 font-mono text-[10px] text-cyan-400 tracking-widest text-center">
+                <span className="inline-block px-3 py-1 rounded-sm bg-black/70 backdrop-blur-sm">[ TARGET LOCK CONFIRMED // SECTOR 81 ]</span>
               </div>
 
               <div className="tactical-panel tactical-clip corner-brackets p-6 md:p-8 rounded bg-black/75 backdrop-blur-md border border-cyan-400/35 shadow-[0_0_40px_rgba(0,240,255,0.2)]">
@@ -245,8 +252,8 @@ export default function SplashScreen({
                     initial={{ opacity: 0, y: -15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="text-5xl md:text-6xl font-black uppercase text-white text-glow-cyan tracking-wider"
-                    style={{ fontFamily: 'Orbitron, sans-serif' }}
+                    className="font-black uppercase text-white text-glow-cyan tracking-wider whitespace-nowrap leading-tight"
+                    style={{ fontFamily: 'Orbitron, sans-serif', fontSize: cityNameFontSize(city.name) }}
                   >
                     {city.name}
                   </motion.h1>
@@ -303,7 +310,7 @@ export default function SplashScreen({
 
               {/* Scan calibration bar */}
               <div className="mt-4 text-center">
-                <p className="text-[10px] font-mono text-cyan-400/60 tracking-widest mb-1">
+                <p className="inline-block px-3 py-1 rounded-sm bg-black/70 backdrop-blur-sm text-[10px] font-mono text-cyan-400 tracking-widest mb-2">
                   CALIBRATING ORBITAL DRONE RELAYS & EMERGENCY COMM FREQUENCIES...
                 </p>
                 <div className="w-64 h-1 bg-slate-800 rounded-full mx-auto overflow-hidden">

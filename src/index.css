@@ -113,7 +113,7 @@ body::after {
   background-size: 100% 3px, 3px 100%;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.55;
+  opacity: 0.12;
 }
 
 /* ── Scrollbars ── */
@@ -195,6 +195,11 @@ body::after {
 }
 .text-glow-success {
   text-shadow: 0 0 8px rgba(0,255,136,0.7);
+}
+
+/* Keeps small HUD text readable when it sits directly on the globe */
+.hud-legible {
+  text-shadow: 0 0 3px #03070d, 0 0 8px #03070d, 0 1px 2px #000;
 }
 
 /* ── Box Glow Utilities ── */
@@ -329,6 +334,8 @@ input[type=range].slider-success::-webkit-slider-thumb {
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  /* Cards slide in from the side; don't let that cause a sideways scrollbar */
+  overflow-x: clip;
 }
 
 /* ── Top Status Ticker Bar ── */

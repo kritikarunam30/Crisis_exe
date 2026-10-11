@@ -13,6 +13,9 @@ import OutcomeScreen from './components/screens/OutcomeScreen';
 import FinalScoreScreen from './components/screens/FinalScoreScreen';
 import LeaderboardScreen from './components/screens/LeaderboardScreen';
 
+// Screens where ambient warning toasts may appear
+const MISSION_SCREENS = ['WarningScreen', 'AllocationScreen', 'OutcomeScreen'];
+
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState('SplashScreen');
   const [transitionStage, setTransitionStage] = useState('idle');
@@ -69,7 +72,18 @@ function AppContent() {
         onStageComplete={handleStageComplete}
       />
 
-      <FakeWarningToast />
+      {/* Dims the globe behind the mission screens so their panels stay readable */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background: 'rgba(3, 7, 13, 0.68)',
+          opacity: currentScreen === 'SplashScreen' ? 0 : 1,
+          transition: 'opacity 0.7s ease',
+        }}
+      />
+
+      <FakeWarningToast active={MISSION_SCREENS.includes(currentScreen)} />
       <Toaster
         position="top-right"
         toastOptions={{

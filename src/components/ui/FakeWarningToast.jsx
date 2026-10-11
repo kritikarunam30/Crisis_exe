@@ -2,15 +2,20 @@ import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import fakeWarnings from '../../logic/fakeWarnings';
 
-export default function FakeWarningToast() {
+// Ambient warnings only fire while `active` (during a mission, not on the
+// landing page or leaderboard).
+export default function FakeWarningToast({ active = true }) {
   useEffect(() => {
+    if (!active) return;
+
     let timeoutId;
+    const toastIds = [];
 
     const fireToast = () => {
       const randomIndex = Math.floor(Math.random() * fakeWarnings.length);
       const message = fakeWarnings[randomIndex];
 
-      toast(message, {
+      const id = toast(message, {
         duration: 4500,
         style: {
           background: 'rgba(5, 15, 29, 0.96)',
@@ -26,6 +31,7 @@ export default function FakeWarningToast() {
         },
         icon: '⚠️',
       });
+      toastIds.push(id);
 
       // Schedule next toast between 25s and 45s
       const nextDelay = Math.floor(Math.random() * 20000) + 25000;
@@ -36,8 +42,11 @@ export default function FakeWarningToast() {
     const initialDelay = Math.floor(Math.random() * 20000) + 25000;
     timeoutId = setTimeout(fireToast, initialDelay);
 
-    return () => clearTimeout(timeoutId);
-  }, []);
+    return () => {
+      clearTimeout(timeoutId);
+      toastIds.forEach((id) => toast.dismiss(id));
+    };
+  }, [active]);
 
   return null; // Has no visible output itself
 }

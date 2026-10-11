@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { createAtmosphereMaterial } from './AtmosphereShader.js';
+import { createAtmosphereMaterial, ATMOSPHERE_RADIUS } from './AtmosphereShader.js';
+import { createEarthMaterial } from './earthMaterial.js';
 import { loadEarthTextures } from './textureHelper.js';
 import { createIndiaBoundary, createIndiaLocator, createCityMarkers } from './geoMeshes.js';
 import { createStarfield } from './starfield.js';
@@ -14,6 +15,13 @@ function isWebGLAvailable() {
     return false;
   }
 }
+
+// Landing-page framing: the planet sits below the screen so only its upper
+// horizon shows, tilted so the band of latitudes around India is in view.
+const IDLE_Y = -2.46;
+const IDLE_SCALE = 2.3;
+const IDLE_RX = -0.5;
+const IDLE_START_RY = getRotationForLocation(INDIA_CENTER.lat, INDIA_CENTER.lon).ry - 0.45;
 
 // Ease helper: cubic ease-in-out
 function easeInOutCubic(t) {
@@ -41,7 +49,6 @@ export default function EarthCanvas({
   const rendererRef = useRef(null);
   const earthGroupRef = useRef(null);
   const globeMeshRef = useRef(null);
-  const cloudsMeshRef = useRef(null);
   const starfieldRef = useRef(null);
   const indiaBoundaryRef = useRef(null);
   const indiaLocatorRef = useRef(null);
@@ -52,14 +59,14 @@ export default function EarthCanvas({
     currentStage: 'idle',
     stageStartTime: 0,
     stageDuration: 0,
-    fromPos: new THREE.Vector3(0, -1.9, 0),
-    toPos: new THREE.Vector3(0, -1.9, 0),
-    fromScale: 2.2,
-    toScale: 2.2,
+    fromPos: new THREE.Vector3(0, IDLE_Y, 0),
+    toPos: new THREE.Vector3(0, IDLE_Y, 0),
+    fromScale: IDLE_SCALE,
+    toScale: IDLE_SCALE,
     fromCameraZ: 3.6,
     toCameraZ: 3.6,
-    fromRx: 0.22,
-    toRx: 0.22,
+    fromRx: IDLE_RX,
+    toRx: IDLE_RX,
     fromRy: 0,
     toRy: 0,
     revolutionBaseRy: 0,
@@ -95,11 +102,11 @@ export default function EarthCanvas({
 
     if (transitionStage === 'idle') {
       state.fromPos.copy(curPos);
-      state.toPos.set(0, -1.9, 0);
+      state.toPos.set(0, IDLE_Y, 0);
       state.fromScale = curScale;
-      state.toScale = 2.2;
+      state.toScale = IDLE_SCALE;
       state.fromRx = curRx;
-      state.toRx = 0.22;
+      state.toRx = IDLE_RX;
       state.fromCameraZ = curCamZ;
       state.toCameraZ = 3.6;
       state.stageDuration = 0;
@@ -270,49 +277,25 @@ export default function EarthCanvas({
     // 6. Earth Group
     const earthGroup = new THREE.Group();
     earthGroup.rotation.order = 'XYZ';
-    earthGroup.position.set(0, -1.9, 0);
-    earthGroup.scale.setScalar(2.2);
-    earthGroup.rotation.x = 0.22;
+    earthGroup.position.set(0, IDLE_Y, 0);
+    earthGroup.scale.setScalar(IDLE_SCALE);
+    earthGroup.rotation.x = IDLE_RX;
+    earthGroup.rotation.y = IDLE_START_RY;
     scene.add(earthGroup);
     earthGroupRef.current = earthGroup;
 
-    // 7. Globe Mesh
-    const globeGeo = new THREE.SphereGeometry(1, 64, 64);
-    const globeMat = new THREE.MeshStandardMaterial({
-      roughness: 0.75,
-      metalness: 0.1,
-    });
+    // 7. Globe Mesh (day/night surface, clouds and haze are all in its shader)
+    const globeGeo = new THREE.SphereGeometry(1, 128, 128);
+    const globeMat = createEarthMaterial();
     const globeMesh = new THREE.Mesh(globeGeo, globeMat);
     earthGroup.add(globeMesh);
     globeMeshRef.current = globeMesh;
 
-    // Load textures
-    loadEarthTextures((textures) => {
-      if (textures.earthMap) globeMat.map = textures.earthMap;
-      if (textures.normalMap) globeMat.normalMap = textures.normalMap;
-      if (textures.specularMap) globeMat.roughnessMap = textures.specularMap;
-      globeMat.needsUpdate = true;
+    // 8. Load textures
+    loadEarthTextures(globeMat, renderer.capabilities.getMaxAnisotropy());
 
-      if (textures.cloudsMap && cloudsMeshRef.current) {
-        cloudsMeshRef.current.material.map = textures.cloudsMap;
-        cloudsMeshRef.current.material.needsUpdate = true;
-      }
-    });
-
-    // 8. Cloud Layer
-    const cloudsGeo = new THREE.SphereGeometry(1.006, 64, 64);
-    const cloudsMat = new THREE.MeshStandardMaterial({
-      transparent: true,
-      opacity: 0.35,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const cloudsMesh = new THREE.Mesh(cloudsGeo, cloudsMat);
-    earthGroup.add(cloudsMesh);
-    cloudsMeshRef.current = cloudsMesh;
-
-    // 9. Atmosphere Fresnel Rim Shell
-    const atmosGeo = new THREE.SphereGeometry(1.026, 64, 64);
+    // 9. Atmosphere halo shell
+    const atmosGeo = new THREE.SphereGeometry(ATMOSPHERE_RADIUS, 128, 128);
     const atmosMat = createAtmosphereMaterial();
     const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
     earthGroup.add(atmosMesh);
@@ -362,9 +345,9 @@ export default function EarthCanvas({
       }
 
       // Slow independent cloud drift
-      if (cloudsMeshRef.current) {
-        cloudsMeshRef.current.rotation.y += delta * 0.015;
-      }
+      globeMat.uniforms.cloudOffset.value = (globeMat.uniforms.cloudOffset.value + delta * 0.0003) % 1;
+      // Thin the clouds out as the camera closes in, so the city lock stays readable
+      globeMat.uniforms.cloudAmount.value = THREE.MathUtils.lerp(0.3, 1, THREE.MathUtils.smoothstep(camera.position.z, 1.4, 2.8));
 
       // Update locator tick animations
       if (indiaLocatorRef.current) {
@@ -380,9 +363,9 @@ export default function EarthCanvas({
         // Slow ambient rotation of Earth in landing page
         earthGroup.rotation.y += delta * 0.035;
         // Keep earth at bottom
-        earthGroup.position.set(0, -1.9, 0);
-        earthGroup.scale.setScalar(2.2);
-        earthGroup.rotation.x = 0.22;
+        earthGroup.position.set(0, IDLE_Y, 0);
+        earthGroup.scale.setScalar(IDLE_SCALE);
+        earthGroup.rotation.x = IDLE_RX;
         camera.position.z = 3.6;
       } else if (state.stageDuration > 0) {
         const elapsed = currentTime - state.stageStartTime;

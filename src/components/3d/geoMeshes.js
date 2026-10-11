@@ -168,6 +168,7 @@ export function createCityMarkers(radius = 1.004) {
   }
 
   let _activeCityName = null;
+  let _opacity = 0;
 
   function setActiveCity(cityName) {
     _activeCityName = cityName;
@@ -181,6 +182,7 @@ export function createCityMarkers(radius = 1.004) {
   }
 
   function setOpacity(val) {
+    _opacity = Math.max(0, Math.min(1, val));
     for (const m of allDotMats) {
       m.opacity = Math.max(0, Math.min(0.8, val));
     }
@@ -192,7 +194,7 @@ export function createCityMarkers(radius = 1.004) {
     // Pulse expanding radar wave
     const pulse = (time * 1.5) % 1;
     pingMesh.scale.setScalar(0.5 + pulse * 1.8);
-    pingMat.opacity = (1 - pulse) * 0.75;
+    pingMat.opacity = (1 - pulse) * 0.75 * _opacity;
   }
 
   return { group, setActiveCity, setOpacity, update, cityNodes };

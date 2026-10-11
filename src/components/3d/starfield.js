@@ -1,19 +1,17 @@
 import * as THREE from 'three';
 
 /**
- * Creates a high-fidelity starfield celestial background with subtle twinkling and varied star colors.
+ * Creates a quiet, realistic star background: many faint pinpoint stars and a
+ * few brighter ones, all near-white.
  */
 export function createStarfield(count = 3200, radius = 90) {
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
-  const sizes = new Float32Array(count);
 
   const starColors = [
-    new THREE.Color(0xffffff), // pure white
-    new THREE.Color(0xbfefff), // cyan-ice
-    new THREE.Color(0x00f0ff), // tech cyan
-    new THREE.Color(0xfff0c8), // pale gold
-    new THREE.Color(0x99bbff), // pale blue
+    new THREE.Color(0xffffff), // white
+    new THREE.Color(0xdfe9ff), // cool white
+    new THREE.Color(0xfff4e0), // warm white
   ];
 
   for (let i = 0; i < count; i++) {
@@ -26,36 +24,22 @@ export function createStarfield(count = 3200, radius = 90) {
     positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
     positions[i * 3 + 2] = r * Math.cos(phi);
 
+    // Most stars are faint; brightness is baked into the colour
+    const brightness = 0.12 + Math.pow(Math.random(), 4) * 0.88;
     const col = starColors[Math.floor(Math.random() * starColors.length)];
-    colors[i * 3]     = col.r;
-    colors[i * 3 + 1] = col.g;
-    colors[i * 3 + 2] = col.b;
-
-    sizes[i] = Math.random() * 1.8 + 0.6;
+    colors[i * 3]     = col.r * brightness;
+    colors[i * 3 + 1] = col.g * brightness;
+    colors[i * 3 + 2] = col.b * brightness;
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-  // Circular point texture for smooth stars
-  const canvas = document.createElement('canvas');
-  canvas.width = 16;
-  canvas.height = 16;
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
-  grad.addColorStop(0.8, 'rgba(0,240,255,0.2)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 16, 16);
-  const starTex = new THREE.CanvasTexture(canvas);
-
   const material = new THREE.PointsMaterial({
-    size: 1.4,
+    size: 1.6,
+    sizeAttenuation: false,
     vertexColors: true,
-    map: starTex,
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
