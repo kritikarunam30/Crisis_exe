@@ -84,11 +84,9 @@ export default function LeaderboardScreen({ onNext }) {
           >
             {/* Table header */}
             <div className="bg-black/50 border-b border-cyan-400/20 px-4 py-2.5 grid grid-cols-12 font-mono text-[10px] text-slate-500 uppercase tracking-widest">
-              <div className="col-span-1">RANK</div>
-              <div className="col-span-4">OPERATOR</div>
-              <div className="col-span-3">SECTOR</div>
-              <div className="col-span-2 text-center">STATUS</div>
-              <div className="col-span-2 text-right">SCORE</div>
+              <div className="col-span-2">RANK</div>
+              <div className="col-span-6">OPERATOR</div>
+              <div className="col-span-4 text-right">SCORE</div>
             </div>
 
             {loading && (
@@ -117,7 +115,7 @@ export default function LeaderboardScreen({ onNext }) {
                   style={isTop3 ? { boxShadow: `inset 3px 0 0 ${rank.color}` } : {}}
                 >
                   {/* Rank */}
-                  <div className="col-span-1">
+                  <div className="col-span-2">
                     <span
                       className="font-black text-sm font-mono"
                       style={{
@@ -131,51 +129,18 @@ export default function LeaderboardScreen({ onNext }) {
                   </div>
 
                   {/* Operator */}
-                  <div className="col-span-4 flex items-center gap-2">
+                  <div className="col-span-6 flex items-center gap-2">
                     {s ? (
-                      <>
-                        <span className="font-bold text-sm text-white uppercase tracking-wide" style={{ fontFamily: 'Chakra Petch, sans-serif' }}>
-                          {s.nickname}
-                        </span>
-                        {!s.survived && (
-                          <span title="City Collapsed" className="text-[10px] text-red-400 font-mono border border-red-400/40 px-1 rounded">
-                            💀 KIA
-                          </span>
-                        )}
-                      </>
+                      <span className="font-bold text-sm text-white uppercase tracking-wide" style={{ fontFamily: 'Chakra Petch, sans-serif' }}>
+                        {s.nickname}
+                      </span>
                     ) : (
                       <span className="text-slate-600 font-mono text-xs">—</span>
                     )}
                   </div>
 
-                  {/* City */}
-                  <div className="col-span-3">
-                    {s ? (
-                      <span className="font-mono text-xs text-slate-300">{s.city?.toUpperCase() || '—'}</span>
-                    ) : (
-                      <span className="text-slate-700 font-mono text-xs">—</span>
-                    )}
-                  </div>
-
-                  {/* Survived status */}
-                  <div className="col-span-2 text-center">
-                    {s ? (
-                      <span
-                        className="status-chip text-[9px] px-1.5 py-0.5"
-                        style={s.survived
-                          ? { border: '1px solid #00ff8860', color: '#00ff88', background: 'rgba(0,255,136,0.08)' }
-                          : { border: '1px solid #ff2a5560', color: '#ff2a55', background: 'rgba(255,42,85,0.08)' }
-                        }
-                      >
-                        {s.survived ? '[ SAVED ]' : '[ FALLEN ]'}
-                      </span>
-                    ) : (
-                      <span className="text-slate-700 font-mono text-xs">—</span>
-                    )}
-                  </div>
-
                   {/* Score */}
-                  <div className="col-span-2 text-right">
+                  <div className="col-span-4 text-right">
                     {s ? (
                       <span
                         className="font-black font-mono text-sm tabular-nums"

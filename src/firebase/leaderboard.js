@@ -1,4 +1,4 @@
-import { ref, push, get, query, orderByChild, limitToLast } from 'firebase/database';
+import { ref, push, get } from 'firebase/database';
 import { db, isFirebaseConfigured } from './config';
 
 const LOCAL_SCORES_KEY = 'crisis_exe_local_scores';
@@ -46,34 +46,18 @@ export async function submitScore({ nickname, score, city, survived }) {
 
 export async function getTopScores(limit = 10) {
   if (!db || !isFirebaseConfigured) {
-    const scores = getLocalScores().slice(0, limit);
-    while (scores.length < limit) {
-      scores.push(null);
-    }
-    return scores;
+    return getLocalScores()
+      .filter((entry) => entry && Number.isFinite(Number(entry.score)))
+      .sort((a, b) => Number(b.score) - Number(a.score))
+      .slice(0, limit);
   }
 
   const scoresRef = ref(db, 'scores');
-  // Order by score. Firebase orderByChild sorts in ascending order.
-  // We use limitToLast to get the highest scores.
-  const q = query(scoresRef, orderByChild('score'), limitToLast(limit));
-  
-  const snapshot = await get(q);
-  const scores = [];
-  
-  if (snapshot.exists()) {
-    snapshot.forEach((childSnapshot) => {
-      scores.push(childSnapshot.val());
-    });
-  }
-  
-  // Reverse to get descending order (Firebase limitToLast gives ascending)
-  scores.reverse();
+  const snapshot = await get(scoresRef);
+  const scores = snapshot.exists() ? Object.values(snapshot.val()) : [];
 
-  // Pad to exactly `limit` entries — null for unfilled ranks
-  while (scores.length < limit) {
-    scores.push(null);
-  }
-
-  return scores;
+  return scores
+    .filter((entry) => entry && typeof entry.nickname === 'string' && Number.isFinite(Number(entry.score)))
+    .sort((a, b) => Number(b.score) - Number(a.score))
+    .slice(0, limit);
 }
